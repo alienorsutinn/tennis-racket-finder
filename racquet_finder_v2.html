@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Your Perfect Racquet | The Ultimate Match</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #050507; --card: #0f0f15; --elevated: #151520; --tennis: #ccff00; --energy: #00ffaa; --fire: #ff4400; --text: #fff; --muted: #777799; --dim: #444455; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+        
+        .noise { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); opacity: 0.03; pointer-events: none; z-index: 1; }
+        canvas { position: fixed; top: 0; left: 0; z-index: 0; opacity: 0.5; }
+        .app { position: relative; z-index: 2; }
+
+        /* Intro */
+        .intro { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 20px; }
+        .intro-badge { font-size: 0.7rem; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: var(--tennis); background: rgba(204,255,0,0.1); padding: 8px 20px; border-radius: 30px; border: 1px solid rgba(204,255,0,0.3); margin-bottom: 30px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { box-shadow: 0 0 20px rgba(204,255,0,0); } 50% { box-shadow: 0 0 30px rgba(204,255,0,0.3); } }
+        .intro h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(4rem, 15vw, 10rem); line-height: 0.9; text-align: center; margin-bottom: 20px; }
+        .intro h1 span:first-child { display: block; opacity: 0; animation: up 0.8s 0.2s forwards; }
+        .intro h1 span:last-child { display: block; background: linear-gradient(90deg, var(--tennis), var(--energy)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; opacity: 0; animation: up 0.8s 0.4s forwards; }
+        @keyframes up { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
+        .intro p { font-size: 1.1rem; color: var(--muted); text-align: center; max-width: 450px; margin-bottom: 40px; opacity: 0; animation: fade 1s 0.8s forwards; }
+        @keyframes fade { to { opacity: 1; } }
+        .start-btn { padding: 20px 60px; font-size: 1rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--bg); background: var(--tennis); border: none; border-radius: 60px; cursor: pointer; opacity: 0; animation: fade 1s 1s forwards; transition: transform 0.3s, box-shadow 0.3s; }
+        .start-btn:hover { transform: scale(1.05); box-shadow: 0 0 60px rgba(204,255,0,0.5); }
+        .intro-stats { display: flex; gap: 50px; margin-top: 50px; opacity: 0; animation: fade 1s 1.2s forwards; }
+        .intro-stat { text-align: center; }
+        .intro-stat div:first-child { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: var(--tennis); }
+        .intro-stat div:last-child { font-size: 0.7rem; color: var(--dim); text-transform: uppercase; letter-spacing: 2px; }
+
+        /* Quiz */
+        .quiz { display: none; min-height: 100vh; padding: 40px 20px; }
+        .quiz.active { display: block; }
+        .quiz-inner { max-width: 900px; margin: 0 auto; }
+        
+        .progress { margin-bottom: 40px; }
+        .progress-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .progress-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--dim); }
+        .progress-count { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; }
+        .progress-count .cur { color: var(--tennis); }
+        .progress-count .tot { color: var(--dim); }
+        .progress-bar { height: 3px; background: var(--elevated); border-radius: 2px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--tennis), var(--energy)); width: 0%; transition: width 0.6s; }
+
+        /* Questions */
+        .q-section { display: none; opacity: 0; }
+        .q-section.active { display: block; animation: qEnter 0.6s forwards; }
+        @keyframes qEnter { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+        .q-section.exit { animation: qExit 0.4s forwards; }
+        @keyframes qExit { to { opacity: 0; transform: translateX(-50px); } }
+        
+        .q-num { font-family: 'Bebas Neue', sans-serif; font-size: 5rem; line-height: 1; background: linear-gradient(180deg, var(--dim), transparent); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .q-text { font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 700; line-height: 1.2; margin-bottom: 10px; }
+        .q-hint { font-size: 0.9rem; color: var(--muted); margin-bottom: 30px; }
+
+        /* Options */
+        .opts { display: grid; gap: 15px; }
+        .opt { background: var(--card); border: 1px solid var(--elevated); border-radius: 16px; padding: 25px; cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden; }
+        .opt:hover { border-color: var(--tennis); transform: translateY(-3px); }
+        .opt.sel { border-color: var(--tennis); background: linear-gradient(135deg, rgba(204,255,0,0.1), var(--card)); }
+        .opt.sel::after { content: '✓'; position: absolute; top: 15px; right: 15px; width: 26px; height: 26px; background: var(--tennis); color: var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; }
+        
+        .opt-main { display: flex; gap: 20px; align-items: flex-start; }
+        .opt-content { flex: 1; }
+        .opt-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .opt-tag { font-size: 0.6rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; background: var(--elevated); color: var(--muted); }
+        .opt-tag.pop { background: rgba(204,255,0,0.2); color: var(--tennis); }
+        .opt-desc { color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
+
+        /* Swing Visual */
+        .swing-box { width: 100px; height: 100px; background: var(--elevated); border-radius: 12px; position: relative; flex-shrink: 0; overflow: hidden; }
+        .swing-racquet { position: absolute; width: 50px; height: 80px; bottom: 5px; left: 50%; transform-origin: bottom center; }
+        .swing-head { width: 32px; height: 45px; background: linear-gradient(135deg, #333, #222); border: 2px solid var(--tennis); border-radius: 50% 50% 45% 45%; position: absolute; top: 0; left: 50%; transform: translateX(-50%); }
+        .swing-handle { width: 6px; height: 40px; background: linear-gradient(to bottom, #444, #222); position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); border-radius: 3px; }
+        .speed-bars { position: absolute; bottom: 8px; left: 10px; right: 10px; display: flex; gap: 3px; justify-content: center; }
+        .speed-bar { width: 6px; height: 16px; background: var(--card); border-radius: 2px; }
+        
+        [data-swing="slow"] .swing-racquet { animation: swSlow 3s infinite ease-in-out; }
+        [data-swing="slow"] .speed-bar:nth-child(1) { background: var(--tennis); }
+        [data-swing="moderate"] .swing-racquet { animation: swMod 2s infinite ease-in-out; }
+        [data-swing="moderate"] .speed-bar:nth-child(-n+2) { background: var(--tennis); }
+        [data-swing="fast"] .swing-racquet { animation: swFast 0.8s infinite ease-in-out; }
+        [data-swing="fast"] .speed-bar:nth-child(-n+3) { background: var(--tennis); }
+        [data-swing="extreme"] .swing-racquet { animation: swExt 0.5s infinite ease-in-out; }
+        [data-swing="extreme"] .speed-bar { background: var(--fire); box-shadow: 0 0 8px var(--fire); }
+        
+        @keyframes swSlow { 0%,100% { transform: translateX(-50%) rotate(-20deg); } 50% { transform: translateX(-50%) rotate(20deg); } }
+        @keyframes swMod { 0%,100% { transform: translateX(-50%) rotate(-35deg); } 50% { transform: translateX(-50%) rotate(35deg); } }
+        @keyframes swFast { 0%,100% { transform: translateX(-50%) rotate(-50deg); } 50% { transform: translateX(-50%) rotate(50deg); } }
+        @keyframes swExt { 0%,100% { transform: translateX(-50%) rotate(-60deg); } 50% { transform: translateX(-50%) rotate(60deg); } }
+
+        /* Level Ring */
+        .level-box { width: 100px; height: 100px; background: var(--elevated); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .level-ring { width: 75px; height: 75px; position: relative; }
+        .level-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+        .level-ring circle { fill: none; stroke-width: 5; }
+        .level-ring .bg { stroke: var(--card); }
+        .level-ring .fg { stroke: var(--tennis); stroke-dasharray: 201; stroke-dashoffset: var(--off, 150); stroke-linecap: round; transition: stroke-dashoffset 0.6s; }
+        .opt:hover .level-ring .fg, .opt.sel .level-ring .fg { stroke-dashoffset: var(--off-hover, 100); }
+        .level-val { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--tennis); }
+
+        /* Style Court */
+        .style-box { width: 100px; height: 100px; background: var(--elevated); border-radius: 12px; position: relative; flex-shrink: 0; overflow: hidden; }
+        .mini-court { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 65px; border: 2px solid rgba(255,255,255,0.2); border-radius: 3px; }
+        .mini-court::before { content: ''; position: absolute; top: 30%; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.2); }
+        .player-dot { position: absolute; width: 10px; height: 10px; background: var(--tennis); border-radius: 50%; box-shadow: 0 0 12px var(--tennis); }
+        [data-style="defense"] .player-dot { bottom: 12px; left: 50%; transform: translateX(-50%); animation: defMove 3s infinite; }
+        [data-style="aggro"] .player-dot { bottom: 20px; left: 50%; transform: translateX(-50%); animation: aggMove 2s infinite; }
+        [data-style="allcourt"] .player-dot { bottom: 30px; left: 50%; transform: translateX(-50%); animation: allMove 4s infinite; }
+        [data-style="volley"] .player-dot { bottom: 40px; left: 50%; transform: translateX(-50%); animation: volMove 2s infinite; }
+        @keyframes defMove { 0%,100% { left: 25%; } 50% { left: 75%; } }
+        @keyframes aggMove { 0%,100% { left: 30%; bottom: 20px; } 50% { left: 70%; bottom: 28px; } }
+        @keyframes allMove { 0% { left: 25%; bottom: 15px; } 33% { left: 75%; bottom: 35px; } 66% { left: 50%; bottom: 50px; } 100% { left: 25%; bottom: 15px; } }
+        @keyframes volMove { 0%,100% { bottom: 25px; } 50% { bottom: 50px; } }
+
+        /* Icon Box */
+        .icon-box { width: 80px; height: 80px; background: var(--elevated); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; flex-shrink: 0; }
+
+        /* Pro Ref */
+        .pro-ref { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--elevated); border-radius: 10px; margin-top: 12px; }
+        .pro-avatars { display: flex; }
+        .pro-av { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--card); margin-left: -8px; background: linear-gradient(135deg, var(--tennis), var(--energy)); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--bg); }
+        .pro-av:first-child { margin-left: 0; }
+        .pro-info { flex: 1; }
+        .pro-label { font-size: 0.65rem; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
+        .pro-names { font-size: 0.85rem; font-weight: 600; }
+
+        /* Nav */
+        .q-nav { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 25px; border-top: 1px solid var(--elevated); }
+        .nav-btn { padding: 16px 35px; font-size: 0.9rem; font-weight: 700; border-radius: 50px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
+        .nav-back { background: transparent; border: 2px solid var(--elevated); color: var(--muted); }
+        .nav-back:hover { border-color: var(--muted); color: var(--text); }
+        .nav-next { background: var(--tennis); border: none; color: var(--bg); }
+        .nav-next:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(204,255,0,0.4); }
+        .nav-next:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        /* Results */
+        .results { display: none; min-height: 100vh; padding: 60px 20px; }
+        .results.active { display: block; }
+        .results-inner { max-width: 1000px; margin: 0 auto; }
+        .results-hero { text-align: center; margin-bottom: 50px; }
+        .results-badge { display: inline-flex; align-items: center; gap: 8px; padding: 10px 25px; background: rgba(204,255,0,0.1); border: 1px solid rgba(204,255,0,0.3); border-radius: 50px; font-size: 0.7rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--tennis); margin-bottom: 20px; }
+        .results-score { font-family: 'Bebas Neue', sans-serif; font-size: clamp(5rem, 18vw, 10rem); line-height: 0.9; background: linear-gradient(135deg, var(--tennis), var(--energy)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .results-title { font-size: 1.1rem; color: var(--muted); }
+
+        .result-card { background: linear-gradient(135deg, var(--card), var(--elevated)); border: 1px solid var(--tennis); border-radius: 24px; overflow: hidden; margin-bottom: 35px; }
+        .result-badge { background: var(--tennis); color: var(--bg); font-weight: 800; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; padding: 14px; text-align: center; }
+        .result-content { padding: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        @media (max-width: 700px) { .result-content { grid-template-columns: 1fr; padding: 25px; } }
+        
+        .result-info h3 { font-size: 0.7rem; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+        .result-name { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; line-height: 1; margin-bottom: 20px; }
+        .result-brand { color: var(--tennis); }
+        .result-pros { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 25px; }
+        .result-pro { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--card); border-radius: 25px; font-size: 0.8rem; }
+        .result-why { background: var(--card); border-radius: 14px; padding: 20px; }
+        .result-why h4 { font-size: 0.65rem; color: var(--tennis); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+        .result-why p { color: var(--muted); line-height: 1.6; font-size: 0.9rem; }
+
+        .specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .spec-card { background: var(--card); border-radius: 12px; padding: 16px; }
+        .spec-label { font-size: 0.65rem; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+        .spec-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--tennis); }
+        .spec-bar { height: 3px; background: var(--elevated); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+        .spec-fill { height: 100%; background: linear-gradient(90deg, var(--tennis), var(--energy)); border-radius: 2px; }
+        
+        .result-cta { display: flex; gap: 12px; margin-top: 25px; }
+        .cta-btn { flex: 1; padding: 16px; border-radius: 12px; font-weight: 700; text-decoration: none; text-align: center; transition: all 0.3s; }
+        .cta-primary { background: var(--tennis); color: var(--bg); }
+        .cta-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(204,255,0,0.4); }
+        .cta-secondary { background: var(--card); color: var(--text); border: 1px solid var(--elevated); }
+        .cta-secondary:hover { border-color: var(--tennis); }
+
+        .alts { margin-top: 50px; }
+        .alts h3 { font-size: 0.75rem; color: var(--dim); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
+        .alts h3::after { content: ''; flex: 1; height: 1px; background: var(--elevated); }
+        .alts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+        .alt-card { background: var(--card); border: 1px solid var(--elevated); border-radius: 16px; padding: 20px; transition: all 0.3s; }
+        .alt-card:hover { border-color: var(--energy); transform: translateY(-3px); }
+        .alt-match { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--energy); }
+        .alt-name { font-weight: 700; margin-bottom: 3px; }
+        .alt-brand { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; }
+        .alt-specs { display: flex; gap: 12px; font-size: 0.7rem; color: var(--dim); }
+
+        .profile { margin-top: 50px; background: var(--card); border-radius: 16px; padding: 30px; }
+        .profile h3 { font-size: 0.75rem; color: var(--dim); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
+        .profile-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+        .trait { padding: 10px 18px; background: var(--elevated); border-radius: 8px; font-size: 0.85rem; }
+        .trait-label { color: var(--dim); margin-right: 6px; }
+        .trait-val { color: var(--tennis); font-weight: 600; }
+
+        .restart { text-align: center; margin-top: 50px; }
+        .restart-btn { padding: 16px 45px; background: transparent; border: 2px solid var(--elevated); border-radius: 50px; color: var(--muted); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .restart-btn:hover { border-color: var(--text); color: var(--text); }
+
+        @media (max-width: 600px) { .opt-main { flex-direction: column; } .swing-box, .level-box, .style-box { width: 100%; height: 120px; } .intro-stats { flex-direction: column; gap: 20px; } }
+    </style>
+</head>
+<body>
+    <div class="noise"></div>
+    <canvas id="canvas"></canvas>
+    <div class="app">
+        <!-- INTRO -->
+        <section class="intro" id="intro">
+            <div class="intro-badge">🎾 AI-Powered Matching</div>
+            <h1><span>FIND YOUR</span><span>PERFECT RACQUET</span></h1>
+            <p>8 questions. Intelligent analysis. One racquet that actually matches how you play.</p>
+            <button class="start-btn" onclick="startQuiz()">Start The Quiz →</button>
+            <div class="intro-stats">
+                <div class="intro-stat"><div>50+</div><div>Racquets Analyzed</div></div>
+                <div class="intro-stat"><div>12K+</div><div>Players Matched</div></div>
+                <div class="intro-stat"><div>94%</div><div>Satisfaction</div></div>
+            </div>
+        </section>
+
+        <!-- QUIZ -->
+        <section class="quiz" id="quiz">
+            <div class="quiz-inner">
+                <div class="progress">
+                    <div class="progress-header">
+                        <span class="progress-label">Your Progress</span>
+                        <span class="progress-count"><span class="cur" id="curQ">1</span><span class="tot">/ 8</span></span>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill" id="progFill"></div></div>
+                </div>
+
+                <!-- Q1: Level -->
+                <div class="q-section active" data-q="1">
+                    <div class="q-num">01</div>
+                    <h2 class="q-text">What level are you playing at?</h2>
+                    <p class="q-hint">Be honest — this helps us dial in the right specs</p>
+                    <div class="opts">
+                        <div class="opt" data-value="beginner" data-points='{"power":3,"headSize":3,"weight":-2,"forgiveness":3}'>
+                            <div class="opt-main">
+                                <div class="level-box"><div class="level-ring" style="--off:180;--off-hover:180"><svg viewBox="0 0 80 80"><circle class="bg" cx="40" cy="40" r="32"/><circle class="fg" cx="40" cy="40" r="32"/></svg><div class="level-val">2.5</div></div></div>
+                                <div class="opt-content"><div class="opt-title">Beginner <span class="opt-tag">NTRP 1.0–2.5</span></div><div class="opt-desc">Still building fundamentals. Working on consistency. Every rally is a small victory.</div></div>
+                            </div>
+                        </div>
+                        <div class="opt" data-value="intermediate" data-points='{"power":1,"headSize":1}'>
+                            <div class="opt-main">
+                                <div class="level-box"><div class="level-ring" style="--off:180;--off-hover:120"><svg viewBox="0 0 80 80"><circle class="bg" cx="40" cy="40" r="32"/><circle class="fg" cx="40" cy="40" r="32"/></svg><div class="level-val">3.5</div></div></div>
+                                <div class="opt-content"><div class="opt-title">Intermediate <span class="opt-tag pop">Most Common</span></div><div class="opt-desc">Can sustain rallies, developing shot variety. Starting to think tactically.</div></div>
+                            </div>
+                        </div>
+                        <div class="opt" data-value="advanced" data-points='{"power":-1,"headSize":-1,"weight":1,"control":2}'>
+                            <div class="opt-main">
+                                <div class="level-box"><div class="level-ring" style="--off:180;--off-hover:60"><svg viewBox="0 0 80 80"><circle class="bg" cx="40" cy="40" r="32"/><circle class="fg" cx="40" cy="40" r="32"/></svg><div class="level-val">4.5</div></div></div>
+                                <div class="opt-content"><div class="opt-title">Advanced <span class="opt-tag">NTRP 4.0–4.5</span></div><div class="opt-desc">Strong all-around game. Can hit winners and construct points under pressure.</div></div>
+                            </div>
+                        </div>
+                        <div class="opt" data-value="expert" data-points='{"power":-2,"headSize":-2,"weight":3,"control":3}'>
+                            <div class="opt-main">
+                                <div class="level-box"><div class="level-ring" style="--off:180;--off-hover:15"><svg viewBox="0 0 80 80"><circle class="bg" cx="40" cy="40" r="32"/><circle class="fg" cx="40" cy="40" r="32"/></svg><div class="level-val">5.5+</div></div></div>
+                                <div class="opt-content"><div class="opt-title">Expert <span class="opt-tag">NTRP 5.0+</span></div><div class="opt-desc">You generate your own pace. Equipment needs to stay out of the way.</div></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="q-nav"><div></div><button class="nav-btn nav-next" disabled onclick="nextQ()">Continue →</button></div>
+                </div>
+
+                <!-- Q2: Swing Speed -->
+                <div class="q-section" data-q="2">
+                    <div class="q-num">02</div>
+                    <h2 class="q-text">How fast is your swing?</h2>
+                    <p class="q-hint">Watch the racquet animation — pick the one that matches your tempo</p>
+                    <div class="opts">
+                        <div class="opt" data-value="slow" data-swing="slow" data-points='{"power":4,"weight":-3,"swingweight":-3}'>
+                            <div class="opt-main">
+                                <div class="swing-box"><div class="swing-racquet"><div class="swing-head"></div><div class="swing-handle"></div></div><div class="speed-bars"><div class="speed-bar"></div><div class="speed-bar"></div><div class="speed-bar"></div><div class="speed-bar"></div></div></div>
+                                <div class="opt-content"><div class="opt-title">Compact & Controlled</div><div class="opt-desc">Short backswing, smooth tempo. You guide the ball more than whip it.</div><div class="pro-ref"><div class="pro-avatars"><div class="pro-av">🎯</div></div><div class="pro-info"><div class="pro-label">Best for</div><div class="pro-names">Doubles specialists, touch players</div></div></div></div>
+                            </div>
+                        </div>
+                        <div class="opt" data-value="moderate" data-swing="moderate" data-points='{"power":1}'>
+                            <div class="opt-main">
+                                <div class="swing-box"><div class="swing-racquet"><div class="swing-head"></div><div class="swing-handle"></div></div><div class="speed-bars"><div class="speed-bar"></div><div class="speed-bar"></div><div class="speed-bar"></div><div class="speed-bar"></div></div></div>
+                                <div class="opt-content"><div class="opt-title">Moderate & Balanced <span class="opt-tag pop">Most Common</span></div><div class="opt-desc">Medium backswing, good racquet head acceleration. Can crank it up when needed.</div><div class="pro-ref"><div class="pro-avatars"><div class="pro-av">JS</div><div class="pro-av">ND</div></div><div class="pro-info"><div class="pro-label">Pro examples</div><div class="pro-names">Sinner, Djokovic — efficient & deadly</div></div></div></div>
+                            </div>
+                        </div>
+                        <div class="opt" data-value="fast" data-swing="fast" data-points='{"power":-2,"weight":2,"swingweight":2,"spin":2}'>
+                            <div class="opt-main">
+                                <div class="swing-box"><div class="swing-racquet"><div class="swing-head"></div><div class="swing-handle"></div></div><div class="speed-bars"><div class="speed-bar"></div><div class="speed-bar"></div><div class="speed-bar"></div><div class="speed-bar"></div></div></div>
+                                <div class="opt-content"><div class="opt-title">Fast & Aggressive</div><div class="opt-desc">Big unit turn, full shoulder rotation, violent acceleration through contact.</div><div class="pro-ref"><div class="pro-avatars"><div class="pro-av">CA</div><div class="pro-av">AS</div></div><div class="pro-info"><div class="pro-label">Pro examples</div><div class="pro-names">Alcaraz, Sabalenka — violent but beautiful</div></div></div></div>
+                            </div>
+                        </div>
+                        <div class="opt" data-value="extreme" data-swing="extreme" data-points='{"power":-3,"weight":3,"swingweight":3,"spin":3,"control":2}'>
+                            <div class="opt-main">
+                                <div class="swing-box"><div class="swing-racquet"><div class="swing-head"></div><div class="swing-handle"></div></div><div class="speed-bars"><div class="speed-bar"></div><div class="speed-bar"></div><div class="speed-bar"></div><div class="speed-bar"></div></div></div>
+                                <div class="opt-content"><div class="opt-title">Windshield Wiper <span class="opt-tag" style="background:rgba(255,68,0,0.2);color:var(--fire)">Beast</span></div><div class="opt-desc">Massive racquet head speed, extreme low-to-high path. Weapon of mass destruction.</div><div class="pro-ref"><div class="pro-avatars"><div class="pro-av" style="background:linear-gradient(135deg,var(--fire),#ff8800)">RN</div></div><div class="pro-info"><div class="pro-label">Pro example</div><div class="pro-names">Nadal — the original heavy ball merchant</div></div></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="q-nav"><button class="nav-btn nav-back" onclick="prevQ()">← Back</button><button class="nav-btn nav-next" disabled onclick="nextQ()">Continue →</button></div>
+                </div>
+
+                <!-- Q3: Style -->
+                <div class="q-section" data-q="3">
+                    <div class="q-num">03</div>
+                    <h2 class="q-text">How do you like to win points?</h2>
+                    <p class="q-hint">Watch the court position — where do you live during rallies?</p>
+                    <div class="opts">
+                        <div class="opt" data-value="defense" data-points='{"control":3,"spin":1,"power":-1,"weight":1}'>
+                            <div class="opt-main">
+                                <div class="style-box" data-style="defense"><div class="mini-court"></div><div class="player-dot"></div></div>
+                                <div class="opt-content"><div class="opt-title">The Wall</div><div class="opt-desc">Retrieve everything. Make them play one more ball. Defense IS your offense.</div><div class="pro-ref"><div class="pro-avatars"><div class="pro-av">ND</div><div class="pro-av">DM</div></div><div class="pro-info"><div class="pro-label">Pro examples</div><div class="pro-names">Djokovic, Medvedev — "you can't beat me"</div></div></div></div>
+                            </div>
+                        </div>
+                        <div class="opt" data-value="aggro" data-points='{"power":3,"spin":2,"control":-1,"headSize":1}'>
+                            <div class="opt-main">
+                                <div class="style-box" data-style="aggro"><div class="mini-court"></div><div class="player-dot"></div></div>
+                                <div class="opt-content"><div class="opt-title">The Aggressor <span class="opt-tag pop">Most Popular</span></div><div class="opt-desc">Dictate with power. Step inside the baseline. Make them fear your groundstrokes.</div><div class="pro-ref"><div class="pro-avatars"><div class="pro-av">CA</div><div class="pro-av">AS</div></div><div class="pro-info"><div class="pro-label">Pro examples</div><div class="pro-names">Alcaraz, Sabalenka — shock & awe</div></div></div></div>
+                            </div>
+                        </div>
+                        <div class="opt" data-value="allcourt" data-points='{"control":2,"power":1,"spin":1}'>
+                            <div class="opt-main">
+                                <div class="style-box" data-style="allcourt"><div class="mini-court"></div><div class="player-dot"></div></div>
+                                <div class="opt-content"><div class="opt-title">The Complete Player</div><div class="opt-desc">Adapt to anything. Comfortable everywhere on the court. Swiss army knife tennis.</div><div class="pro-ref"><div class="pro-avatars"><div class="pro-av">JS</div><div class="pro-av">IS</div></div><div class="pro-info"><div class="pro-label">Pro examples</div><div class="pro-names">Sinner, Swiatek — surgical precision</div></div></div></div>
+                            </div>
+                        </div>
+                        <div class="opt" data-value="volley" data-points='{"control":2,"weight":2,"maneuverability":3}'>
+                            <div class="opt-main">
+                                <div class="style-box" data-style="volley"><div class="mini-court"></div><div class="player-dot"></div></div>
+                                <div class="opt-content"><div class="opt-title">The Net Rusher</div><div class="opt-desc">Take time away at the net. Serve and volley. Old school cool.</div><div class="pro-ref"><div class="pro-avatars"><div class="pro-av">RF</div></div><div class="pro-info"><div class="pro-label">Pro example</div><div class="pro-names">Federer — poetry in motion</div></div></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="q-nav"><button class="nav-btn nav-back" onclick="prevQ()">← Back</button><button class="nav-btn nav-next" disabled onclick="nextQ()">Continue →</button></div>
+                </div>
+
+                <!-- Q4: Weakness -->
+                <div class="q-section" data-q="4">
+                    <div class="q-num">04</div>
+                    <h2 class="q-text">What's holding your game back?</h2>
+                    <p class="q-hint">Be real — we'll find a racquet that helps fix this</p>
+                    <div class="opts">
+                        <div class="opt" data-value="power" data-points='{"power":5,"stiffness":3,"headSize":2}'><div class="opt-main"><div class="icon-box">💨</div><div class="opt-content"><div class="opt-title">Not Enough Power</div><div class="opt-desc">Balls land short. Opponents step in and attack. Need more pop without swinging harder.</div></div></div></div>
+                        <div class="opt" data-value="control" data-points='{"control":5,"power":-2,"headSize":-2}'><div class="opt-main"><div class="icon-box">🎯</div><div class="opt-content"><div class="opt-title">Balls Fly Everywhere</div><div class="opt-desc">Too many unforced errors. Long, wide, into the net. Need something to tame my swing.</div></div></div></div>
+                        <div class="opt" data-value="spin" data-points='{"spin":5,"openPattern":3}'><div class="opt-main"><div class="icon-box">🌀</div><div class="opt-content"><div class="opt-title">Can't Generate Spin</div><div class="opt-desc">Shots are flat, predictable. Hard to hit angles or heavy balls. Need spin-friendly setup.</div></div></div></div>
+                        <div class="opt" data-value="comfort" data-points='{"comfort":5,"stiffness":-4,"weight":-2}'><div class="opt-main"><div class="icon-box">💪</div><div class="opt-content"><div class="opt-title">Arm/Elbow Pain</div><div class="opt-desc">Body is telling me something. Tennis elbow, shoulder issues. Need arm-friendly specs.</div></div></div></div>
+                    </div>
+                    <div class="q-nav"><button class="nav-btn nav-back" onclick="prevQ()">← Back</button><button class="nav-btn nav-next" disabled onclick="nextQ()">Continue →</button></div>
+                </div>
+
+                <!-- Q5: Build -->
+                <div class="q-section" data-q="5">
+                    <div class="q-num">05</div>
+                    <h2 class="q-text">What's your physical build?</h2>
+                    <p class="q-hint">This determines the weight range that'll work best</p>
+                    <div class="opts">
+                        <div class="opt" data-value="light" data-points='{"weight":-4,"swingweight":-3,"maneuverability":3}'><div class="opt-main"><div class="icon-box">🪶</div><div class="opt-content"><div class="opt-title">Lighter Build</div><div class="opt-desc">Less upper body strength. Need something maneuverable that won't tire you out.</div></div></div></div>
+                        <div class="opt" data-value="average" data-points='{}'><div class="opt-main"><div class="icon-box">⚖️</div><div class="opt-content"><div class="opt-title">Average Build <span class="opt-tag pop">Most Common</span></div><div class="opt-desc">Can handle standard weight racquets (300-310g). The sweet spot for most frames.</div></div></div></div>
+                        <div class="opt" data-value="strong" data-points='{"weight":3,"swingweight":3,"power":-1}'><div class="opt-main"><div class="icon-box">💪</div><div class="opt-content"><div class="opt-title">Strong / Athletic</div><div class="opt-desc">Can swing heavy frames easily. Looking for stability and plow-through.</div></div></div></div>
+                    </div>
+                    <div class="q-nav"><button class="nav-btn nav-back" onclick="prevQ()">← Back</button><button class="nav-btn nav-next" disabled onclick="nextQ()">Continue →</button></div>
+                </div>
+
+                <!-- Q6: Current Brand -->
+                <div class="q-section" data-q="6">
+                    <div class="q-num">06</div>
+                    <h2 class="q-text">What brand do you currently use?</h2>
+                    <p class="q-hint">This helps us understand your current feel preferences</p>
+                    <div class="opts">
+                        <div class="opt" data-value="babolat" data-points='{"spin":1,"power":1}'><div class="opt-main"><div class="icon-box">🟡</div><div class="opt-content"><div class="opt-title">Babolat</div><div class="opt-desc">Pure Drive, Pure Aero, Pure Strike family</div></div></div></div>
+                        <div class="opt" data-value="wilson" data-points='{"control":1}'><div class="opt-main"><div class="icon-box">🔴</div><div class="opt-content"><div class="opt-title">Wilson</div><div class="opt-desc">Blade, Pro Staff, Clash, Ultra family</div></div></div></div>
+                        <div class="opt" data-value="head" data-points='{}'><div class="opt-main"><div class="icon-box">⚫</div><div class="opt-content"><div class="opt-title">HEAD</div><div class="opt-desc">Speed, Gravity, Boom, Extreme family</div></div></div></div>
+                        <div class="opt" data-value="yonex" data-points='{"comfort":1}'><div class="opt-main"><div class="icon-box">🔵</div><div class="opt-content"><div class="opt-title">Yonex</div><div class="opt-desc">EZONE, VCORE, Percept family</div></div></div></div>
+                        <div class="opt" data-value="other" data-points='{}'><div class="opt-main"><div class="icon-box">🎾</div><div class="opt-content"><div class="opt-title">Other / Not Sure</div><div class="opt-desc">Tecnifibre, Dunlop, Prince, or I don't know</div></div></div></div>
+                    </div>
+                    <div class="q-nav"><button class="nav-btn nav-back" onclick="prevQ()">← Back</button><button class="nav-btn nav-next" disabled onclick="nextQ()">Continue →</button></div>
+                </div>
+
+                <!-- Q7: Priority -->
+                <div class="q-section" data-q="7">
+                    <div class="q-num">07</div>
+                    <h2 class="q-text">If you could only pick ONE thing...</h2>
+                    <p class="q-hint">This is the tiebreaker — what matters most?</p>
+                    <div class="opts">
+                        <div class="opt" data-value="spin" data-points='{"spin":6,"openPattern":4}'><div class="opt-main"><div class="icon-box">🌀</div><div class="opt-content"><div class="opt-title">Maximum Spin</div><div class="opt-desc">Heavy, kicking balls that jump off the court. Nadal/Alcaraz style RPMs.</div></div></div></div>
+                        <div class="opt" data-value="power" data-points='{"power":6,"stiffness":3}'><div class="opt-main"><div class="icon-box">⚡</div><div class="opt-content"><div class="opt-title">Easy Power</div><div class="opt-desc">Racquet does the work. Effortless depth and pace.</div></div></div></div>
+                        <div class="opt" data-value="control" data-points='{"control":6,"weight":2,"headSize":-3}'><div class="opt-main"><div class="icon-box">🎯</div><div class="opt-content"><div class="opt-title">Precision Control</div><div class="opt-desc">Surgical accuracy. I provide the power, racquet provides precision.</div></div></div></div>
+                        <div class="opt" data-value="comfort" data-points='{"comfort":6,"stiffness":-5}'><div class="opt-main"><div class="icon-box">☁️</div><div class="opt-content"><div class="opt-title">Arm-Friendly</div><div class="opt-desc">Play pain-free. Sacrifice some performance for longevity.</div></div></div></div>
+                    </div>
+                    <div class="q-nav"><button class="nav-btn nav-back" onclick="prevQ()">← Back</button><button class="nav-btn nav-next" disabled onclick="nextQ()">Continue →</button></div>
+                </div>
+
+                <!-- Q8: Budget -->
+                <div class="q-section" data-q="8">
+                    <div class="q-num">08</div>
+                    <h2 class="q-text">What's your budget?</h2>
+                    <p class="q-hint">Great racquets exist at every price point</p>
+                    <div class="opts">
+                        <div class="opt" data-value="budget" data-budget="150"><div class="opt-main"><div class="icon-box">💵</div><div class="opt-content"><div class="opt-title">Under $150</div><div class="opt-desc">Value picks. Previous gen models, great deals.</div></div></div></div>
+                        <div class="opt" data-value="mid" data-budget="250"><div class="opt-main"><div class="icon-box">💵💵</div><div class="opt-content"><div class="opt-title">$150 – $250 <span class="opt-tag pop">Sweet Spot</span></div><div class="opt-desc">Best value-to-performance. Current gen mid-tier.</div></div></div></div>
+                        <div class="opt" data-value="premium" data-budget="350"><div class="opt-main"><div class="icon-box">💵💵💵</div><div class="opt-content"><div class="opt-title">$250+</div><div class="opt-desc">Top of the line. Same frames the pros use.</div></div></div></div>
+                    </div>
+                    <div class="q-nav"><button class="nav-btn nav-back" onclick="prevQ()">← Back</button><button class="nav-btn nav-next" disabled onclick="showResults()">See My Results →</button></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RESULTS -->
+        <section class="results" id="results">
+            <div class="results-inner">
+                <div class="results-hero">
+                    <div class="results-badge">✓ Analysis Complete</div>
+                    <div class="results-score" id="rScore">94%</div>
+                    <p class="results-title">Match Found</p>
+                </div>
+                <div class="result-card">
+                    <div class="result-badge">🏆 YOUR #1 RECOMMENDATION</div>
+                    <div class="result-content">
+                        <div class="result-info">
+                            <h3>Best Match For You</h3>
+                            <div class="result-name"><span class="result-brand" id="rBrand">Babolat</span><br><span id="rModel">Pure Aero 98</span></div>
+                            <div class="result-pros" id="rPros"></div>
+                            <div class="result-why"><h4>Why This Matches You</h4><p id="rWhy"></p></div>
+                        </div>
+                        <div>
+                            <div class="specs-grid">
+                                <div class="spec-card"><div class="spec-label">Head Size</div><div class="spec-val" id="sHead">98 sq in</div><div class="spec-bar"><div class="spec-fill" style="width:70%"></div></div></div>
+                                <div class="spec-card"><div class="spec-label">Weight</div><div class="spec-val" id="sWeight">305g</div><div class="spec-bar"><div class="spec-fill" style="width:75%"></div></div></div>
+                                <div class="spec-card"><div class="spec-label">Balance</div><div class="spec-val" id="sBal">320mm</div><div class="spec-bar"><div class="spec-fill" style="width:50%"></div></div></div>
+                                <div class="spec-card"><div class="spec-label">Pattern</div><div class="spec-val" id="sPat">16×19</div></div>
+                            </div>
+                            <div class="result-cta">
+                                <a href="#" class="cta-btn cta-primary" id="shopBtn">Shop Now →</a>
+                                <a href="#" class="cta-btn cta-secondary" id="cmpBtn">Compare</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="alts"><h3>Also Consider</h3><div class="alts-grid" id="altsGrid"></div></div>
+                <div class="profile"><h3>Your Player Profile</h3><div class="profile-grid" id="profGrid"></div></div>
+                <div class="restart"><button class="restart-btn" onclick="restart()">↻ Retake Quiz</button></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const racquets=[{id:1,brand:"Babolat",model:"Pure Aero 98",head:98,wt:305,bal:320,pat:"16×19",stiff:67,pros:[{n:"Carlos Alcaraz",f:"🇪🇸"},{n:"Holger Rune",f:"🇩🇰"}],traits:{spin:9,power:7,control:7,comfort:5},why:"Aggressive baseliners who want massive spin with control. Your fast swing unlocks this racquet's potential.",link:"YOUR_LINK"},{id:2,brand:"HEAD",model:"Speed MP",head:100,wt:300,bal:320,pat:"16×19",stiff:64,pros:[{n:"Jannik Sinner",f:"🇮🇹"},{n:"Novak Djokovic",f:"🇷🇸"}],traits:{spin:7,power:7,control:8,comfort:7},why:"All-court players seeking perfect balance. Enough power for offense, enough control for precision.",link:"YOUR_LINK"},{id:3,brand:"Wilson",model:"Blade 98 v9",head:98,wt:305,bal:320,pat:"16×19",stiff:62,pros:[{n:"Aryna Sabalenka",f:"🇧🇾"},{n:"Stefanos Tsitsipas",f:"🇬🇷"}],traits:{spin:6,power:6,control:9,comfort:7},why:"Players who prioritize feel and precision. You'll know exactly where every ball is going.",link:"YOUR_LINK"},{id:4,brand:"Yonex",model:"EZONE 100",head:100,wt:300,bal:320,pat:"16×19",stiff:66,pros:[{n:"Naomi Osaka",f:"🇯🇵"},{n:"Nick Kyrgios",f:"🇦🇺"}],traits:{spin:7,power:8,control:6,comfort:8},why:"Power-seekers who need arm-friendly comfort. Isometric head gives you a huge sweet spot.",link:"YOUR_LINK"},{id:5,brand:"HEAD",model:"Boom MP",head:100,wt:295,bal:320,pat:"16×19",stiff:64,pros:[{n:"Coco Gauff",f:"🇺🇸"}],traits:{spin:7,power:8,control:6,comfort:7},why:"Modern baseline players wanting easy power with connected feel. Lighter weight for quick exchanges.",link:"YOUR_LINK"},{id:6,brand:"Tecnifibre",model:"TFight 300",head:98,wt:300,bal:320,pat:"16×19",stiff:64,pros:[{n:"Iga Swiatek",f:"🇵🇱"},{n:"Daniil Medvedev",f:"🇷🇺"}],traits:{spin:7,power:6,control:8,comfort:8},why:"Control-oriented players who need arm-friendly comfort. French engineering at its finest.",link:"YOUR_LINK"},{id:7,brand:"Babolat",model:"Pure Drive",head:100,wt:300,bal:320,pat:"16×19",stiff:71,pros:[{n:"Best-seller",f:"🌍"}],traits:{spin:7,power:9,control:5,comfort:5},why:"Maximum easy power. The racquet does the work — perfect for compact swings needing extra pop.",link:"YOUR_LINK"},{id:8,brand:"Wilson",model:"Clash 100 v2",head:100,wt:295,bal:312,pat:"16×19",stiff:55,pros:[{n:"Arm-friendly",f:"💪"}],traits:{spin:6,power:7,control:7,comfort:10},why:"Players with arm issues who refuse to compromise. Revolutionary flex technology.",link:"YOUR_LINK"},{id:9,brand:"HEAD",model:"Gravity Pro",head:100,wt:315,bal:315,pat:"18×20",stiff:63,pros:[{n:"Alexander Zverev",f:"🇩🇪"},{n:"Andrey Rublev",f:"🇷🇺"}],traits:{spin:6,power:6,control:9,comfort:7},why:"Taller players wanting stability and plow-through. Dense pattern for ultimate control.",link:"YOUR_LINK"},{id:10,brand:"Yonex",model:"VCORE 98",head:98,wt:305,bal:315,pat:"16×19",stiff:65,pros:[{n:"Elena Rybakina",f:"🇰🇿"},{n:"Casper Ruud",f:"🇳🇴"}],traits:{spin:8,power:7,control:7,comfort:7},why:"Spin-focused players who want a slightly smaller head for added precision.",link:"YOUR_LINK"},{id:11,brand:"HEAD",model:"Extreme MP",head:100,wt:300,bal:320,pat:"16×19",stiff:68,pros:[{n:"Matteo Berrettini",f:"🇮🇹"}],traits:{spin:9,power:8,control:5,comfort:5},why:"Extreme spin seekers. Open pattern + stiff frame = maximum RPMs.",link:"YOUR_LINK"},{id:12,brand:"Wilson",model:"Pro Staff 97 v14",head:97,wt:315,bal:310,pat:"16×19",stiff:64,pros:[{n:"Qinwen Zheng",f:"🇨🇳"},{n:"Roger Federer",f:"🇨🇭"}],traits:{spin:5,power:5,control:10,comfort:6},why:"Classic players wanting ultimate feel and precision. For those who generate their own power.",link:"YOUR_LINK"}];
+        let curQ=1,ans={},prof={power:0,control:0,spin:0,comfort:0,weight:0,headSize:0,stiffness:0,swingweight:0,openPattern:0,maneuverability:0,forgiveness:0};
+        const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');let particles=[];
+        function initCanvas(){canvas.width=innerWidth;canvas.height=innerHeight;particles=[];for(let i=0;i<40;i++)particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-0.5)*0.4,vy:(Math.random()-0.5)*0.4,s:Math.random()*2+1});}
+        function animCanvas(){ctx.clearRect(0,0,canvas.width,canvas.height);particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>canvas.width)p.vx*=-1;if(p.y<0||p.y>canvas.height)p.vy*=-1;ctx.beginPath();ctx.arc(p.x,p.y,p.s,0,Math.PI*2);ctx.fillStyle='rgba(204,255,0,0.3)';ctx.fill();});particles.forEach((a,i)=>particles.slice(i+1).forEach(b=>{const d=Math.hypot(a.x-b.x,a.y-b.y);if(d<120){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=`rgba(204,255,0,${0.08*(1-d/120)})`;ctx.stroke();}}));requestAnimationFrame(animCanvas);}
+        addEventListener('resize',initCanvas);initCanvas();animCanvas();
+        function startQuiz(){document.getElementById('intro').style.display='none';document.getElementById('quiz').classList.add('active');updProg();}
+        function updProg(){document.getElementById('curQ').textContent=curQ;document.getElementById('progFill').style.width=((curQ-1)/8*100)+'%';}
+        document.querySelectorAll('.opt').forEach(o=>o.addEventListener('click',function(){const sec=this.closest('.q-section');sec.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));this.classList.add('sel');sec.querySelector('.nav-next').disabled=false;ans[sec.dataset.q]=this.dataset.value;const pts=this.dataset.points?JSON.parse(this.dataset.points):{};Object.keys(pts).forEach(k=>{if(prof[k]!==undefined)prof[k]+=pts[k];});}));
+        function nextQ(){if(curQ<8){const c=document.querySelector(`[data-q="${curQ}"]`);c.classList.add('exit');setTimeout(()=>{c.classList.remove('active','exit');curQ++;document.querySelector(`[data-q="${curQ}"]`).classList.add('active');updProg();},400);}}
+        function prevQ(){if(curQ>1){document.querySelector(`[data-q="${curQ}"]`).classList.remove('active');curQ--;document.querySelector(`[data-q="${curQ}"]`).classList.add('active');updProg();}}
+        function calcMatch(r){let s=50;if(prof.spin>5)s+=r.traits.spin*3;if(prof.power>5)s+=r.traits.power*3;else if(prof.power<-3)s+=r.traits.control*2;if(prof.control>5)s+=r.traits.control*3;if(prof.comfort>3){s+=r.traits.comfort*4;if(r.stiff<62)s+=10;}if(prof.weight<-3&&r.wt<300)s+=15;if(prof.weight>3&&r.wt>=305)s+=15;if(prof.headSize>3&&r.head>=100)s+=10;if(prof.headSize<-3&&r.head<=98)s+=10;return Math.min(98,Math.max(65,Math.round(s)));}
+        function showResults(){const scored=racquets.map(r=>({...r,match:calcMatch(r)})).sort((a,b)=>b.match-a.match),top=scored[0],alts=scored.slice(1,4);document.getElementById('rScore').textContent=top.match+'%';document.getElementById('rBrand').textContent=top.brand;document.getElementById('rModel').textContent=top.model;document.getElementById('rWhy').textContent=top.why;document.getElementById('sHead').textContent=top.head+' sq in';document.getElementById('sWeight').textContent=top.wt+'g';document.getElementById('sBal').textContent=top.bal+'mm';document.getElementById('sPat').textContent=top.pat;document.getElementById('shopBtn').href=top.link;document.getElementById('cmpBtn').href=top.link;document.getElementById('rPros').innerHTML=top.pros.map(p=>`<div class="result-pro"><span>${p.f}</span> ${p.n}</div>`).join('');document.getElementById('altsGrid').innerHTML=alts.map(r=>`<div class="alt-card"><div class="alt-match">${r.match}%</div><div class="alt-name">${r.model}</div><div class="alt-brand">${r.brand}</div><div class="alt-specs"><span>${r.head} sq in</span><span>${r.wt}g</span><span>${r.pat}</span></div></div>`).join('');let traits=[];if(ans['1'])traits.push({l:'Level',v:ans['1'][0].toUpperCase()+ans['1'].slice(1)});if(ans['2'])traits.push({l:'Swing',v:ans['2'][0].toUpperCase()+ans['2'].slice(1)});if(ans['3'])traits.push({l:'Style',v:ans['3'][0].toUpperCase()+ans['3'].slice(1)});if(prof.spin>3)traits.push({l:'Focus',v:'Spin'});if(prof.power>3)traits.push({l:'Focus',v:'Power'});if(prof.comfort>3)traits.push({l:'Focus',v:'Comfort'});document.getElementById('profGrid').innerHTML=traits.map(t=>`<div class="trait"><span class="trait-label">${t.l}:</span><span class="trait-val">${t.v}</span></div>`).join('');document.getElementById('quiz').classList.remove('active');document.getElementById('results').classList.add('active');document.getElementById('progFill').style.width='100%';}
+        function restart(){curQ=1;ans={};prof={power:0,control:0,spin:0,comfort:0,weight:0,headSize:0,stiffness:0,swingweight:0,openPattern:0,maneuverability:0,forgiveness:0};document.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));document.querySelectorAll('.nav-next').forEach(b=>b.disabled=true);document.getElementById('results').classList.remove('active');document.getElementById('intro').style.display='flex';updProg();}
+    </script>
+</body>
+</html>
